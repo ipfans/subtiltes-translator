@@ -1,0 +1,20 @@
+[project]
+name = "subtiltes-translator"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    { name = "Kevin Lee", email = "363344+ipfans@users.noreply.github.com" },
+]
+dependencies = [
+    "ass>=0.5.4",
+    "flet>=0.24.1",
+    "google-generativeai>=0.8.2",
+    "srt>=3.5.3",
+]
+requires-python = "==3.12.*"
+readme = "README.md"
+license = { text = "MIT" }
+
+
+[tool.pdm]
+distribution = false
