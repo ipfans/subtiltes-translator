@@ -1,3 +1,4 @@
+import os
 import pathlib
 import tempfile
 from typing import Any, Callable
@@ -55,6 +56,8 @@ def translate_subtitle(
     """
     翻译字幕
     """
+    subtitle_file = os.path.expanduser(subtitle_file)
+    target_dir = os.path.expanduser(target_dir)
     genai.configure(api_key=api_key)
     if tmp_dir is None:
         tmp = tempfile.mkdtemp()
@@ -100,7 +103,11 @@ def translate_subtitle(
         if progress_callback:
             progress_callback(index, total_files)
 
-    output_file = pathlib.Path(target_dir).joinpath(
-        f"{pathlib.Path(files[0]).stem}_{target_language}.{file_type.value.lower()}"
+    output_file = (
+        pathlib.Path(target_dir)
+        .joinpath(
+            f"{pathlib.Path(subtitle_file).stem}_{target_language}.{file_type.value.lower()}"
+        )
+        .absolute()
     )
     merge_subtitle_files(file_type, translated_srt, output_file)

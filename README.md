@@ -1,5 +1,7 @@
 # subtiltes-translator
 
+大概只能运行在 Linux/macOS 系统上，还有一大堆 bug 需要解决哦...
+
 ### 软件预览
 
 ![image](./assets/image.webp)
