@@ -9,9 +9,11 @@ from src.subtiltes_translator.gemini import translate_subtitle
 
 def main(page: ft.Page):
     page.title = "字幕翻译软件"
-    page.window.width = 600
-    page.window.height = 350
-    page.padding = 20
+    page.window_width = 800
+    page.window_height = 600
+    page.padding = 30
+    page.theme_mode = ft.ThemeMode.SYSTEM
+    page.theme = ft.Theme(color_scheme_seed="blue")
 
     tmp = tempfile.mkdtemp()
     config = load_config()
@@ -21,14 +23,18 @@ def main(page: ft.Page):
             label="OpenAI API Key",
             value=config["openai_key"],
             disabled=True,
+            width=400,
         )
         claude_key = ft.TextField(
             label="Claude API Key",
             value=config["claude_key"],
             disabled=True,
+            width=400,
         )
         gemini_key = ft.TextField(
-            label="Google Gemini API Key", value=config["gemini_key"]
+            label="Google Gemini API Key",
+            value=config["gemini_key"],
+            width=400,
         )
 
         def save_settings(e):
@@ -52,7 +58,11 @@ def main(page: ft.Page):
             page.clean()
             main(page)
 
-        save_button = ft.ElevatedButton("保存设置", on_click=save_settings)
+        save_button = ft.ElevatedButton(
+            "保存设置",
+            on_click=save_settings,
+            style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        )
         return_button = ft.IconButton(
             icon=ft.icons.ARROW_BACK,
             tooltip="返回主页",
@@ -60,6 +70,7 @@ def main(page: ft.Page):
         )
 
         col = [
+            ft.Text("API 设置", style=ft.TextThemeStyle.HEADLINE_MEDIUM),
             openai_key,
             claude_key,
             gemini_key,
@@ -71,17 +82,12 @@ def main(page: ft.Page):
                 ft.Row([return_button], alignment=ft.MainAxisAlignment.START),
             )
 
-        return ft.Column(col)
-
-    # 判断config所有内容为空时，跳转设置页面
-    if (
-        not config["openai_key"]
-        and not config["claude_key"]
-        and not config["gemini_key"]
-    ):
-        page.clean()
-        page.add(create_settings_page(disable_back=True))
-        return
+        return ft.Container(
+            content=ft.Column(col, spacing=20),
+            padding=30,
+            border_radius=10,
+            bgcolor=ft.colors.SURFACE_VARIANT,
+        )
 
     def on_engine_change(e):
         selected_engine = e.control.value
@@ -103,7 +109,8 @@ def main(page: ft.Page):
     engine_dropdown = ft.Dropdown(
         label="选择翻译引擎",
         options=[],
-        width=200,
+        width=300,
+        border_radius=10,
     )
 
     def update_engine_dropdown():
@@ -128,25 +135,26 @@ def main(page: ft.Page):
             ft.dropdown.Option("德语"),
             ft.dropdown.Option("西班牙语"),
         ],
-        width=200,
+        width=300,
+        border_radius=10,
     )
 
-    progress_bar = ft.ProgressBar(width=400, visible=False)
+    progress_bar = ft.ProgressBar(width=600, height=10, visible=False)
 
     def on_subtitle_result(e: ft.FilePickerResultEvent):
         if e.files:
             home_dir = os.path.expanduser("~")
             relative_paths = []
             for file in e.files:
-                if file.path.startswith("/Volumes/"):
-                    path = "/" + "/".join(file.path.split("/")[3:])
-                else:
-                    path = file.path
+                path = file.path
+                if os.name == "posix":  # For macOS and Linux
+                    if path.startswith("/Volumes/"):
+                        path = "/" + "/".join(path.split("/")[3:])
                 relative_path = os.path.relpath(path, home_dir)
-                if relative_path.startswith(".."):
+                if relative_path.startswith("..") or os.name == "nt":  # For Windows
                     relative_paths.append(path)
                 else:
-                    relative_paths.append(f"~/{relative_path}")
+                    relative_paths.append(os.path.join("~", relative_path))
             subtitle_text.value = ", ".join(relative_paths)
         else:
             subtitle_text.value = "未选择文件"
@@ -155,14 +163,15 @@ def main(page: ft.Page):
     def on_output_result(e: ft.FilePickerResultEvent):
         if e.path:
             path = e.path
-            if e.path.startswith("/Volumes/"):
-                path = "/" + "/".join(path.split("/")[3:])
+            if os.name == "posix":  # For macOS and Linux
+                if path.startswith("/Volumes/"):
+                    path = "/" + "/".join(path.split("/")[3:])
             home_dir = os.path.expanduser("~")
             relative_path = os.path.relpath(path, home_dir)
-            if relative_path.startswith(".."):
+            if relative_path.startswith("..") or os.name == "nt":  # For Windows
                 output_text.value = path
             else:
-                output_text.value = f"~/{relative_path}"
+                output_text.value = os.path.join("~", relative_path)
         else:
             output_text.value = "未选择目录"
         page.update()
@@ -247,8 +256,9 @@ def main(page: ft.Page):
         on_click=lambda _: subtitle_picker.pick_files(
             allowed_extensions=["srt", "ass"], allow_multiple=False
         ),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
     )
-    subtitle_text = ft.Text()
+    subtitle_text = ft.Text(size=14)
 
     output_picker = ft.FilePicker(on_result=on_output_result)
     page.overlay.append(output_picker)
@@ -256,32 +266,67 @@ def main(page: ft.Page):
         "选择输出目录",
         icon=ft.icons.FOLDER,
         on_click=lambda _: output_picker.get_directory_path(),
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
     )
-    output_text = ft.Text()
+    output_text = ft.Text(size=14)
 
-    translate_button = ft.ElevatedButton("翻译", on_click=translate)
-    reset_button = ft.ElevatedButton("重置", on_click=reset)
+    translate_button = ft.ElevatedButton(
+        "翻译",
+        on_click=translate,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        width=150,
+    )
+    reset_button = ft.ElevatedButton(
+        "重置",
+        on_click=reset,
+        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=10)),
+        width=150,
+    )
 
-    settings_button = ft.IconButton(icon=ft.icons.SETTINGS, on_click=open_settings)
+    settings_button = ft.IconButton(
+        icon=ft.icons.SETTINGS,
+        on_click=open_settings,
+        tooltip="设置",
+    )
 
     page.add(
-        ft.Row(
-            [engine_dropdown, settings_button],
-            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-        ),
-        subtitle_language_dropdown,
-        ft.Column(
-            [
-                ft.Row([subtitle_button, subtitle_text]),
-                ft.Row([output_button, output_text]),
-                ft.Row(
-                    [translate_button, reset_button],
-                    alignment=ft.MainAxisAlignment.CENTER,
-                ),
-                progress_bar,
-            ]
-        ),
+        ft.Container(
+            content=ft.Column(
+                [
+                    ft.Text("字幕翻译软件", style=ft.TextThemeStyle.HEADLINE_LARGE),
+                    ft.Row(
+                        [engine_dropdown, settings_button],
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+                    ),
+                    subtitle_language_dropdown,
+                    ft.Column(
+                        [
+                            ft.Row([subtitle_button, subtitle_text]),
+                            ft.Row([output_button, output_text]),
+                            ft.Row(
+                                [translate_button, reset_button],
+                                alignment=ft.MainAxisAlignment.CENTER,
+                            ),
+                            progress_bar,
+                        ],
+                        spacing=20,
+                    ),
+                ],
+                spacing=30,
+            ),
+            padding=20,
+            border_radius=10,
+            bgcolor=ft.colors.SURFACE_VARIANT,
+        )
     )
+
+    # 判断config所有内容为空时，跳转设置页面
+    if (
+        not config["openai_key"]
+        and not config["claude_key"]
+        and not config["gemini_key"]
+    ):
+        open_settings(None)
 
 
 ft.app(target=main)

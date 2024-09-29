@@ -44,12 +44,12 @@ def split_srt_file(subtitle_file: str, tmp_dir: str) -> list[str]:
         data = f.read()
     srt_file = srt.parse(data)
     srt_data = [line for line in srt_file]
-    filename = pathlib.Path(subtitle_file).stem
+    filename = os.path.splitext(os.path.basename(subtitle_file))[0]
     files = []
     for i in range(0, len(srt_data), 100):
-        fn = pathlib.Path(tmp_dir).joinpath(f"{filename}_{i+1:08d}.srt")
+        fn = os.path.join(tmp_dir, f"{filename}_{i+1:08d}.srt")
         data = srt.compose(srt_data[i : i + 100])
-        with fn.open("w") as f:
+        with open(fn, "w", encoding="utf-8") as f:
             f.write(data)
         files.append(fn)
     return files
