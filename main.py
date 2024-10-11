@@ -1,4 +1,5 @@
 import os
+import pathlib
 import tempfile
 
 import flet as ft
@@ -7,10 +8,22 @@ from src.config import get_api_key, load_config, set_api_key
 from src.subtiltes_translator.gemini import translate_subtitle
 
 
+def file_path_to_relative(path: str) -> str:
+    home_dir = os.path.expanduser("~")
+    if os.name == "posix":  # For macOS and Linux
+        if path.startswith("/Volumes/"):
+            path = "/" + "/".join(path.split("/")[3:])
+    relative_path = os.path.relpath(path, home_dir)
+    if relative_path.startswith("..") or os.name == "nt":  # For Windows
+        return path
+    else:
+        return os.path.join("~", relative_path)
+
+
 def main(page: ft.Page):
     page.title = "字幕翻译软件"
-    page.window_width = 800
-    page.window_height = 600
+    page.window_width = 600
+    page.window_height = 650
     page.padding = 30
     page.theme_mode = ft.ThemeMode.SYSTEM
     page.theme = ft.Theme(color_scheme_seed="blue")
@@ -115,12 +128,21 @@ def main(page: ft.Page):
 
     def update_engine_dropdown():
         engine_dropdown.options = []
+        default_engine = None
         if get_api_key("openai"):
             engine_dropdown.options.append(ft.dropdown.Option("OpenAI"))
+            if not default_engine:
+                default_engine = "OpenAI"
         if get_api_key("claude"):
             engine_dropdown.options.append(ft.dropdown.Option("Claude"))
+            if not default_engine:
+                default_engine = "Claude"
         if get_api_key("gemini"):
             engine_dropdown.options.append(ft.dropdown.Option("Google Gemini"))
+            if not default_engine:
+                default_engine = "Google Gemini"
+        if default_engine:
+            engine_dropdown.value = default_engine
         page.update()
 
     update_engine_dropdown()
@@ -137,44 +159,51 @@ def main(page: ft.Page):
         ],
         width=300,
         border_radius=10,
+        value="英语",
     )
 
     progress_bar = ft.ProgressBar(width=600, height=10, visible=False)
 
     def on_subtitle_result(e: ft.FilePickerResultEvent):
         if e.files:
-            home_dir = os.path.expanduser("~")
             relative_paths = []
             for file in e.files:
-                path = file.path
-                if os.name == "posix":  # For macOS and Linux
-                    if path.startswith("/Volumes/"):
-                        path = "/" + "/".join(path.split("/")[3:])
-                relative_path = os.path.relpath(path, home_dir)
-                if relative_path.startswith("..") or os.name == "nt":  # For Windows
-                    relative_paths.append(path)
-                else:
-                    relative_paths.append(os.path.join("~", relative_path))
+                relative_paths.append(file_path_to_relative(file.path))
             subtitle_text.value = ", ".join(relative_paths)
+            output_text.value = file_path_to_relative(
+                str(pathlib.Path(e.files[0].path).parent)
+            )
         else:
             subtitle_text.value = "未选择文件"
         page.update()
 
     def on_output_result(e: ft.FilePickerResultEvent):
         if e.path:
-            path = e.path
-            if os.name == "posix":  # For macOS and Linux
-                if path.startswith("/Volumes/"):
-                    path = "/" + "/".join(path.split("/")[3:])
-            home_dir = os.path.expanduser("~")
-            relative_path = os.path.relpath(path, home_dir)
-            if relative_path.startswith("..") or os.name == "nt":  # For Windows
-                output_text.value = path
-            else:
-                output_text.value = os.path.join("~", relative_path)
+            output_text.value = file_path_to_relative(e.path)
         else:
             output_text.value = "未选择目录"
         page.update()
+
+    # 定义默认的 prompt
+    default_prompt = (
+        f"你正在尝试进行翻译一个美国电视剧剧集的{subtitle_language_dropdown.value} SRT 字幕，翻译成中文。影片主要描述警察探案，日常生活，其他的一些美式俚语等内容。需要你保持原有文件格式进行输出，并对输出内容中的中文进行润色，润色时需要根据字幕中的前后相关内容矫正名词。无需进行说明",
+    )
+
+    # 创建 prompt 输入窗口
+    def on_prompt_change(e):
+        if not prompt_input.value:
+            prompt_input.value = default_prompt[0]
+            page.update()
+
+    prompt_input = ft.TextField(
+        label="翻译提示",
+        value=default_prompt[0],
+        multiline=True,
+        min_lines=3,
+        max_lines=3,
+        width=600,
+        on_change=on_prompt_change,
+    )
 
     def translate(e):
         if not engine_dropdown.value:
@@ -218,6 +247,7 @@ def main(page: ft.Page):
                 page.update()
 
             translate_subtitle(
+                prompt=prompt_input.value,
                 subtitle_file=subtitle_text.value,
                 target_language="中文",
                 from_language=subtitle_language_dropdown.value,
@@ -299,6 +329,7 @@ def main(page: ft.Page):
                         alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     ),
                     subtitle_language_dropdown,
+                    prompt_input,
                     ft.Column(
                         [
                             ft.Row([subtitle_button, subtitle_text]),

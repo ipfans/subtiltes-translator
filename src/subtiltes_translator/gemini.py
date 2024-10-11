@@ -45,6 +45,7 @@ def generate_content(
 
 
 def translate_subtitle(
+    prompt: str,
     subtitle_file: str,
     target_dir: str,
     from_language: str,
@@ -90,7 +91,7 @@ def translate_subtitle(
         fn = pathlib.Path(file)
         fn = fn.with_name(f"{fn.stem}_zh.{fn.suffix}")
         contents = [
-            f"你正在尝试进行翻译一个美国电视剧剧集的{from_language} {file_type.value} 字幕，翻译成{target_language}。影片主要描述日常生活，其他的一些美式俚语等内容。需要你保持原有文件格式进行输出，并对输出内容中的中文进行润色，润色时需要根据文中内容矫正名词。无需进行说明",
+            prompt,
             sample_file,
         ]
         try:
