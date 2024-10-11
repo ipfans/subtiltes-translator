@@ -247,7 +247,7 @@ def main(page: ft.Page):
                 page.update()
 
             translate_subtitle(
-                prompt=prompt_input.value,
+                prompt=prompt_input.value or default_prompt[0],
                 subtitle_file=subtitle_text.value,
                 target_language="中文",
                 from_language=subtitle_language_dropdown.value,
