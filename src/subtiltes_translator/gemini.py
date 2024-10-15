@@ -6,7 +6,11 @@ from typing import Any, Callable
 import ass
 import google.generativeai as genai
 import srt
-from google.generativeai.types import GenerationConfigDict
+from google.generativeai.types import (
+    GenerationConfigDict,
+    HarmBlockThreshold,
+    HarmCategory,
+)
 
 from .utils import get_file_type, merge_subtitle_files, split_subtitle_file
 
@@ -77,6 +81,12 @@ def translate_subtitle(
     model = genai.GenerativeModel(
         model_name="gemini-1.5-flash-exp-0827",
         generation_config=generation_config,
+        safety_settings={
+            HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+            HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+        },
     )
 
     files = split_subtitle_file(file_type, subtitle_file, tmp)
