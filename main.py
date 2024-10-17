@@ -4,7 +4,7 @@ import tempfile
 
 import flet as ft
 
-from src.config import get_api_key, load_config, set_api_key
+from src.config import get_api_key, get_prompt, load_config, set_api_key, set_prompt
 from src.subtiltes_translator.gemini import translate_subtitle
 
 
@@ -184,20 +184,17 @@ def main(page: ft.Page):
             output_text.value = "未选择目录"
         page.update()
 
-    # 定义默认的 prompt
-    default_prompt = (
-        f"你正在尝试进行翻译一个美国电视剧剧集的{subtitle_language_dropdown.value} SRT 字幕，翻译成中文。影片主要描述警察探案，日常生活，其他的一些美式俚语等内容。需要你保持原有文件格式进行输出，并对输出内容中的中文进行润色，润色时需要根据字幕中的前后相关内容矫正名词。无需进行说明",
-    )
+    default_prompt = get_prompt()
 
     # 创建 prompt 输入窗口
     def on_prompt_change(e):
         if not prompt_input.value:
-            prompt_input.value = default_prompt[0]
+            prompt_input.value = default_prompt
             page.update()
 
     prompt_input = ft.TextField(
         label="翻译提示",
-        value=default_prompt[0],
+        value=default_prompt,
         multiline=True,
         min_lines=3,
         max_lines=3,
@@ -246,8 +243,10 @@ def main(page: ft.Page):
                 progress_bar.value = progress
                 page.update()
 
+            set_prompt(prompt_input.value or default_prompt)
+
             translate_subtitle(
-                prompt=prompt_input.value or default_prompt[0],
+                prompt=prompt_input.value or default_prompt,
                 subtitle_file=subtitle_text.value,
                 target_language="中文",
                 from_language=subtitle_language_dropdown.value,
