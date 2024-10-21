@@ -22,8 +22,8 @@ def file_path_to_relative(path: str) -> str:
 
 def main(page: ft.Page):
     page.title = "字幕翻译软件"
-    page.window_width = 600
-    page.window_height = 650
+    page.window.width = 600
+    page.window.height = 650
     page.padding = 30
     page.theme_mode = ft.ThemeMode.SYSTEM
     page.theme = ft.Theme(color_scheme_seed="blue")
@@ -256,11 +256,13 @@ def main(page: ft.Page):
                 progress_callback=update_progress,
             )
 
+            progress_bar.value = 0
             progress_bar.visible = False
             page.update()
 
-            page.snack_bar = ft.SnackBar(content=ft.Text("翻译完成"))
-            page.snack_bar.open = True
+            snack_bar = ft.SnackBar(content=ft.Text("翻译完成"))
+            page.overlay.append(snack_bar)
+            snack_bar.open = True
             settings_button.disabled = False
             reset_button.disabled = False
             translate_button.disabled = False
