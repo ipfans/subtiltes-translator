@@ -79,7 +79,7 @@ def translate_subtitle(
     }  # type: ignore
 
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash-exp-0827",
+        model_name="gemini-2.0-flash-exp",
         generation_config=generation_config,
         safety_settings={
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
