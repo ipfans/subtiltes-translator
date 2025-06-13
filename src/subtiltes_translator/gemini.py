@@ -74,12 +74,15 @@ def translate_subtitle(
         "temperature": 1,
         "top_p": 0.95,
         "top_k": 64,
-        "max_output_tokens": 8192,
+        "max_output_tokens": 65536,
         "response_mime_type": "text/plain",
+        "thinking_config": {
+            "thinking_budget": 0,
+        },
     }  # type: ignore
 
     model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash-exp",
+        model_name="gemini-2.5-flash-preview-05-20",
         generation_config=generation_config,
         safety_settings={
             HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,

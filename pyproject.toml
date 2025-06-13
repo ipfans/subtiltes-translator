@@ -7,11 +7,12 @@ authors = [
 ]
 dependencies = [
     "ass>=0.5.4",
-    "flet>=0.24.1",
+    "flet[all]>=0.27.5",
     "google-generativeai>=0.8.2",
     "srt>=3.5.3",
+    "pysubs2>=1.8.0",
 ]
-requires-python = "==3.12.*"
+requires-python = ">=3.12.0,<3.15.0"
 readme = "README.md"
 license = { text = "MIT" }
 
