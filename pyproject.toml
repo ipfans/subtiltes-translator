@@ -19,3 +19,8 @@ license = { text = "MIT" }
 
 [tool.pdm]
 distribution = false
+
+[tool.ruff]
+max_line_length = 120
+target_version = "py313"
+fix = true
